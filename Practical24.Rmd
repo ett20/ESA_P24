@@ -1,0 +1,349 @@
+---
+title: 'Practical 24: The chemistry of seawater: residence time and feedbacks'
+author: "ETT"
+date: "`r Sys.Date()`"
+output: 
+  tint::tintPdf:
+    keep_tex: TRUE
+    number_sections: true
+    extra_dependencies: ["mhchem"]
+classoption: x11names
+fig_caption: yes
+toc: false
+link-citations: yes
+bibliography: 
+  EnhancedweatheringPrac.bib
+---
+
+```{r setup, include=FALSE}
+library(tufte)
+library(ggplot2)
+library(readxl)
+library(plotly)
+#library(reshape2)
+library(gtools)
+library(MASS)
+library(ggridges)
+library(pracma)
+library(viridis)
+library(colorspace)
+library(dplyr)
+library(tidyr)
+library(zoo)
+
+#library(formatR)
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE, echo = FALSE, cache=FALSE,warning = FALSE, message = FALSE)
+options(htmltools.dir.version = FALSE)
+```
+
+
+
+\newcommand{\mathalert}[1]{\textcolor{red}{\mathbf{#1}}}
+
+```{=tex}
+\marginnote{This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.  It is similar to a jupyter notebook that you might be more familiar with.  You can both explore the code, and also compile the final document to pdf output.  This should provide you with some familiarisation of "R", as well as the science.}
+```
+
+
+\noindent The overall mass balance equation that describes the rate of change of the mass $N$ of any chemical element in a geochemical reservoir, such as a lake, the oceans or atmosphere,  with inputs and outputs ($J_i$ and $J_o$ respectively) is:
+\begin{center}
+\begin{equation}
+\sf \frac{dN}{dt}=J_i-J_o
+\end{equation}
+\end{center}
+
+
+# QUESTION: What is $\sf \frac{dN}{dt}$ when the system is at steady state?
+
+
+
+\noindent Consider a system, which is not at steady state, where either $\sf J_i<J_o$ or $\sf J_i>J_o$.
+
+# QUESTION: What will happen to the concentration of an element in seawater in the case $J_i<J_o$ and $J_i>J_o$.
+
+\noindent By integrating your the equation for $\sf \frac{dN}{dt}$ and plotting the results you should be able to confirm your answer.
+\begin{center}
+\begin{eqnarray}
+\sf N=\left(J_i-J_o\right) \int^t_0 dt\\
+N=\left(J_i-J_o\right)\cdot t
+\end{eqnarray}
+\end{center}
+
+\noindent It is quite easy to plot $\sf N$ as a function of $\sf t$ and $\sf J_i-J_o$
+
+# TASK: Run the chunk of code "Define white theme" and "Plot N1"
+
+```{r Define white theme, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# Define white theme (handouts) ------------------------------------------------------
+theme_white = function(base_size = 18, base_family = "") {
+  
+  theme_grey(base_size = base_size, base_family = base_family) %+replace%
+    
+    theme(
+      # Specify axis options
+      axis.line = element_blank(),  
+      axis.text.x = element_text(size = base_size*0.8, color = "black", lineheight = 0.9, face = "bold"),  
+      axis.text.y = element_text(size = base_size*0.8, color = "black", lineheight = 0.9, face = "bold"),  
+      axis.ticks = element_line(color = "black", size  =  0.2),  
+      axis.title.x = element_text(size = base_size, color = "black", margin = margin(0, 10, 0, 0), face = "bold"),  
+      axis.title.y = element_text(size = base_size, color = "black", angle = 90, margin = margin(0, 10, 0, 0), face = "bold"),  
+      axis.ticks.length = unit(0.3, "lines"),   
+      # Specify legend options
+      legend.background = element_rect(color = NA, fill = "white"),  
+      legend.key = element_rect(color = "black",  fill = "white"),  
+      legend.key.size = unit(1.2, "lines"),  
+      legend.key.height = NULL,  
+      legend.key.width = NULL,      
+      legend.text = element_text(size = base_size*0.8, color = "black"),  
+      legend.title = element_text(size = base_size*0.8, face = "bold", hjust = 0, color = "black"),  
+      legend.position = "right",  
+      legend.text.align = NULL,  
+      legend.title.align = NULL,  
+      legend.direction = "vertical",  
+      legend.box = NULL, 
+      # Specify panel options
+      panel.background = element_rect(fill = "white", color  =  NA),  
+      panel.border = element_rect(fill = NA, color = "black"),  
+      panel.grid.major = element_line(color = "grey35", size=0.1),  
+      panel.grid.minor = element_line(color = "grey20", size=0.1),  
+      panel.margin = unit(0.5, "lines"),   
+      # Specify facetting options
+      strip.background = element_rect(fill = "grey30", color = "grey10"),  
+      strip.text.x = element_text(size = base_size*0.8, color = "black"),  
+      strip.text.y = element_text(size = base_size*0.8, color = "black",angle = -90),  
+      # Specify plot options
+      plot.background = element_rect(color = "white", fill = "white"),  
+      plot.title = element_text(size = base_size*1.2, color = "black"),  
+      plot.margin = unit(rep(1, 4), "lines")
+      
+    )
+  
+}
+```
+
+
+```{r Plot N1, fig.margin = TRUE, warning=FALSE, fig.cap="Contour plot of N vs t in a geochemical reservoir, as a function of the flux imbalance to and from the system"}
+#Create a sequence for t
+t<-seq(0,10, by=1) #Let's suppose that t is in units of Myr
+#Create a sequence for J_i-J_o
+Delta_J<-seq(-1,1, by=0.1) #Units are completely arbitrary at this point.  Call J_i-J_o Delta_J
+#Create functions for N that is dependent on t and Delta_J
+N.func<-function(t,Delta_J) {Delta_J*t}
+#This defines the parameter space
+
+#Evaluate N.func over the entire parameter space t and Delta_J using the "outer" function 
+N<-outer(t,Delta_J,N.func)
+
+colnames(N)<-Delta_J  #Label N cols and rows
+rownames(N)<-t  #Label n1 cols and rows
+
+#Take a quick peak at what this code has done:  Columns are Delta_J, rows are t.  The values in the matrix are N, calculated for each Delta_J and t.
+#head(N)
+
+#To be able to plot this using ggplot, this matrix needs to be converted from "wide" to "long" format
+#First, convert it from a matrix format to a "data frame" or "tibble".  Note that a tibble doesn't support rownames.
+N<-cbind(t,as_tibble(N))
+
+N<-N%>%pivot_longer(!t, names_to = "Delta_J", values_to = "N") #Note that this selects all cols except t
+#Need to make sure everything is a number or "dbl" format at this point.  There are many ways to do this.  Here the "apply" function is used
+N[,c("t","Delta_J","N")]<-lapply(N[,c("t","Delta_J","N")], function(x) as.numeric(as.character(x)))
+
+
+ytitle<-as.character("N")
+xtitle<-as.character("t") 
+
+ggplot()+
+  geom_path(data=N, aes(x=t, y=N+10, colour=Delta_J, group=Delta_J))+
+  scale_color_viridis()+
+  theme_white()+
+  theme(
+    legend.position = c(0.9, .74),
+    #legend.justification = c("top", "right"),
+    #legend.box.just = "right",
+    #legend.margin = margin(6, 6, 6, 6),
+    #legend.key.height= unit(0.5, 'cm'),
+    legend.key.width= unit(0.3, 'cm'),
+    legend.title = element_text(size=6), #change legend title font size
+    legend.text = element_text(size=6) #change legend text font size
+  )+
+  scale_x_continuous(name=xtitle)+
+  scale_y_continuous(name=ytitle)
+  
+
+
+```
+
+# QUESTION:  What does the above imply about how the concentration of an element in a geochemical reservoir can change with time?  Do you think this is realistic?
+
+
+\noindent  In reality, most geochemical systems with have a feedback that prevents a runaway increase or decrease in concentration. The simplest formulation of such a feedback is that the output flux is a linear function of the concentration of the element in the reservoir.  This means that as the concentration of an element in the reservoir increases, so does the output flux, stabilising the rate of increase of concentration.  This can be formulated in the following way:
+\begin{center}
+\begin{equation}
+\sf J_o=kN
+\end{equation}
+\end{center}
+where k is a constant of proportionality.  Eqn.1 therefore gets modified to:
+\begin{center}
+\begin{equation}
+\sf \frac{dN}{dt}=J_i-kN
+\end{equation}
+\end{center}
+
+
+If the system is initially in steady-state, with an input flux $J_i^0$, the new steady-state mass $N_{eq}$ is given by:
+\begin{center}
+\begin{equation}
+N_{eq}=\frac{k}{J_i^0+\Delta J_i^0}
+\end{equation}
+\end{center}
+
+where $\Delta J_i^0$ is the perturbation to the input flux.
+
+The differential equation describing the rate of change of N becomes 
+\begin{center}
+\begin{equation}
+\frac{dN}{dt}=J_i+\Delta J_i^0-kN
+\end{equation}
+\end{center}
+
+
+# QUESTION: Try integrating the above equation to obtain the solution:
+\begin{center}
+\begin{equation}
+N(t)=N_{eq}-\frac{\Delta J_i^0}{k}\cdot exp^{-kt}
+\end{equation}
+\end{center}
+
+```{r Plot N with simple feedback, fig.margin = TRUE, warning=FALSE, fig.cap="Contour plot of N vs t in a geochemical reservoir, with a feedback."}
+#Create a sequence for t
+t<-seq(0,10, by=0.01) #Let's suppose that t is in units of Myr
+#Create a sequence for J_i
+Delta_J_i<-seq(5,5, by=1) #Units are completely arbitrary at this point.  
+#Create a sequence for k
+k<-seq(1,5, by=1) #Units are completely arbitrary at this point.  
+#Define N_o
+N_eq<-10 # Arbitrarily set to 10 as a starting concentration
+#N_eq/k
+#Create functions for N that is dependent on t, J_i, k, and N_o
+N.feedback.func<-function(t,Delta_J_i,k, N_eq) {N_eq-(Delta_J_i/k)*exp(-k*t)}
+#This defines the parameter space
+
+#Create a simple data frame that includes all permutations of t, J_i, k amd N_o
+N<-crossing("t"=t, "Delta_J_i"=Delta_J_i, "k"=k, "N_eq"=N_eq)
+#Apply the function to the parameter space
+N<-N%>%mutate(N_t=N.feedback.func(t,Delta_J_i,k, N_eq))
+
+
+
+ytitle<-as.character("N")
+xtitle<-as.character("t") 
+
+N<-N%>%dplyr::group_by(Delta_J_i,k)%>%arrange(t, .by_group = TRUE)
+
+
+
+ggplot()+
+  geom_path(data=N, aes(x=t, y=N_t, colour=k, group=k))+
+  scale_color_viridis()+
+  theme_white()+
+  theme(
+    legend.position = c(0.9, .74),
+    #legend.justification = c("top", "right"),
+    #legend.box.just = "right",
+    #legend.margin = margin(6, 6, 6, 6),
+    #legend.key.height= unit(0.5, 'cm'),
+    legend.key.width= unit(0.3, 'cm'),
+    legend.title = element_text(size=6), #change legend title font size
+    legend.text = element_text(size=6) #change legend text font size
+  )+
+  scale_x_continuous(name=xtitle)+
+  scale_y_continuous(name=ytitle)
+
+
+
+
+```
+
+# QUESTION: What do you notice about how rapidly the system stabilises at it's new equilibrium value as a function of k?
+
+# QUESTION: What are the units of k?
+
+# QUESTION: Look again at equation 4?  What do you think k corresponds to?
+
+# TASK:  Read in a compilation of mass flux data for a selection of elements in the ocean by running the chunk "read in flux-mass data".
+
+
+```{r read in flux-mass data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+#Define what to do if there is missing data
+na_strings <- c("NA", "n.d.", "N/A", "na","n.a.","","-","-9999","NAN")
+filename<-"Residence_times_Ĺecuyer.xlsx"
+Residence_times<-as.data.frame(read_excel(filename, na = na_strings, skip=0, sheet ="Sheet2"))
+
+```
+
+# TASK:  Calculate the residence time for the selected elements.
+
+```{r residence times calc, Calculate residence time, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+Residence_times<-Residence_times%>%mutate(`Residence time (y)`=`Ocean Kg`/`Flux_out kg/yr`)
+```
+
+# TASK:  Make a plot of residence time vs the mass of each element in the ocean and discuss your results.  Why do some elements have a long residence time, and others much shorter?  Hint:  Look at the elements which are very strongly influenced by the biosphere.
+```{r Residence times plot, fig.margin = TRUE, warning=FALSE, fig.cap="Contour plot of N vs t in a geochemical reservoir, with a feedback."}
+Residence_times<-Residence_times%>%mutate(size=log(10^(`Average log(ksp)`)/min(10^(`Average log(ksp)`))))
+
+ggplot(NULL)+
+  geom_point(data=Residence_times, aes(x=`Ocean Kg`, y=`Residence time (y)`, size=size, color=factor(Element)))+
+  geom_label(data=Residence_times, aes(x=`Ocean Kg`, y=`Residence time (y)`, label=Element, nudge_x=5*`Ocean Kg`, nudge_y=5*`Residence time (y)`))+
+  scale_size(range = c(10, 20), name="Ksp")+
+  theme_white()+
+  scale_x_continuous(trans="log10", name="Mass of element in seawater (Kg)")+
+  scale_y_continuous(trans="log10")+
+  theme(legend.position="none")
+```
+
+\noindent  The Sr isotope budget of the modern ocean can be modelled by the following equation:
+\begin{equation}
+\frac{d(^{87}Sr/^{86}Sr_{sw})}{dt}=\frac{\sum_i\left(\frac{^{87}Sr}{^{86}Sr}\right)_i \cdot(Flux^i_{in}-Flux^i_{out})}{N_{sw}}
+\end{equation}
+
+
+
+# TASK:  Read in a compilation Sr isotope data in marine carbonates for the Cenozoic.
+```{r, read in Sr isotope data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# Read Sr data---------------
+
+Sr<-read.csv("Sr_time.csv")
+
+Sr<-Sr%>%mutate(Sr_rollmean = rollmean(Sr, k=10, fill=NA, align='right'))
+head(Sr)
+```
+
+# TASK:  Compute the running mean of the data.
+```{r, running mean, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+Sr<-Sr%>%mutate(Sr_rollmean = rollmean(Sr, k=10, fill=NA, align='right'))
+head(Sr)
+```
+
+# TASK:  Plot the Sr isotope data.
+
+
+```{r Plot Sr isotopes, fig.fullwidth=TRUE, fig.cap="Sr isotope curve of the Cenozoic", out.width = "100%", warning=FALSE, message=FALSE}
+
+ggplot(NULL)+
+  geom_point(data=Sr, aes(x=age, y=Sr), color="black")+
+  geom_line(data=Sr, aes(x=age, y=Sr_rollmean), color="red")+
+  theme_white()+
+  scale_x_continuous(name="Age Ma", limits=c(65, 0))+
+  scale_y_continuous(name="87Sr/86Sr")+
+  scale_x_reverse()
+  
+
+
+```
+
+# QUESTION:  What are the main inputs of Sr to the ocean and what are their Sr isotope compositions?
+
+# QUESTION:  The interpretation of the Sr isotope data is not unique.  What are the multiple possibilities to explain the data?  What additional data might be useful to distinguish your hypotheses?
