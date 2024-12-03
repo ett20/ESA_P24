@@ -19,3 +19,12 @@ dependencies:
   - r-colorspace
   - r-dplyr
   - r-tidyr
+  - r-MASS
+  - r-ggridges
+  - r-pracma
+  - r-zoo
+  
+
+
+
+
