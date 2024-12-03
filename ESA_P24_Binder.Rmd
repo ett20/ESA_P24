@@ -279,8 +279,7 @@ ggplot()+
 ```{r read in flux-mass data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 #Define what to do if there is missing data
 na_strings <- c("NA", "n.d.", "N/A", "na","n.a.","","-","-9999","NAN")
-filename<-"Residence_times_Ĺecuyer.xlsx"
-Residence_times<-as.data.frame(read_excel(filename, na = na_strings, skip=0, sheet ="Sheet2"))
+Residence_times<-as.data.frame(read_excel("Residence_times_Lecuyer.xlsx", na = na_strings, skip=0, sheet="Sheet2"))
 
 ```
 
