@@ -19,4 +19,3 @@ dependencies:
   - r-colorspace
   - r-dplyr
   - r-tidyr
-  - r-sf
