@@ -198,7 +198,7 @@ where k is a constant of proportionality.  Eqn.1 therefore gets modified to:
 If the system is initially in steady-state, with an input flux $J_i^0$, the new steady-state mass $N_{eq}$ is given by:
 \begin{center}
 \begin{equation}
-N_{eq}=\frac{k}{J_i^0+\Delta J_i^0}
+N_{eq}=\frac{J_i^0+\Delta J_i^0}{k}
 \end{equation}
 \end{center}
 
