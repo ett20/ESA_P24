@@ -47,6 +47,8 @@ options(htmltools.dir.version = FALSE)
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.  It is similar to a jupyter notebook that you might be more familiar with.  You can both explore the code, and also compile the final document to pdf output.  This should provide you with some familiarisation of "R", as well as the science.}
 ```
 
+# This practical will take place on your laptops via a web-browser (hopefully).  Click on [this link](http://mybinder.org/v2/gh/ett20/ESA_P24/main?urlpath=rstudio) to open it.    This will open a Binder webpage which will compile into an interface that is identical to the RStudio App (it will take a few minutes to open).  Some of you will be familiar with this app, but if you have never used if before you will need to spend a few minutes familiarising yourself with it and making sure you know how to run R.
+
 
 \noindent The overall mass balance equation that describes the rate of change of the mass $N$ of any chemical element in a geochemical reservoir, such as a lake, the oceans or atmosphere,  with inputs and outputs ($J_i$ and $J_o$ respectively) is:
 \begin{center}
